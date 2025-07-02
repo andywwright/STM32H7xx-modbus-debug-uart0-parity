@@ -28,6 +28,10 @@
 #include "grbl/hal.h"
 #include "grbl/protocol.h"
 
+#ifndef MODBUS_EVEN_PARITY
+#define MODBUS_EVEN_PARITY 0
+#endif
+
 #ifdef SERIAL_PORT
 static stream_rx_buffer_t rxbuf = {0};
 static stream_tx_buffer_t txbuf = {0};
@@ -602,7 +606,11 @@ static bool serialSuspendInput (bool suspend)
 static bool serialSetBaudRate (uint32_t baud_rate)
 {
     UART0->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
-    UART0->CR1 = USART_CR1_RE|USART_CR1_TE;
+    UART0->CR1 = USART_CR1_RE|USART_CR1_TE
+#if MODBUS_EVEN_PARITY
+        | USART_CR1_PCE
+#endif
+        ;
     UART0->CR3 = USART_CR3_OVRDIS;
     UART0->BRR = UART_DIV_SAMPLING16(UART0_CLK, baud_rate, UART_PRESCALER_DIV1);
     UART0->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
@@ -832,7 +840,11 @@ static bool serial1SuspendInput (bool suspend)
 
 static bool serial1SetBaudRate (uint32_t baud_rate)
 {
-    UART1->CR1 = USART_CR1_RE|USART_CR1_TE;
+    UART1->CR1 = USART_CR1_RE|USART_CR1_TE
+#if MODBUS_EVEN_PARITY
+        | USART_CR1_PCE
+#endif
+        ;
     UART1->CR3 = USART_CR3_OVRDIS;
     UART1->BRR = UART_DIV_SAMPLING16(UART1_CLK, baud_rate, UART_PRESCALER_DIV1);
     UART1->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
@@ -1063,7 +1075,11 @@ static bool serial2SuspendInput (bool suspend)
 
 static bool serial2SetBaudRate (uint32_t baud_rate)
 {
-    UART2->CR1 = USART_CR1_RE|USART_CR1_TE;
+    UART2->CR1 = USART_CR1_RE|USART_CR1_TE
+#if MODBUS_EVEN_PARITY
+        | USART_CR1_PCE
+#endif
+        ;
     UART2->CR3 = USART_CR3_OVRDIS;
     UART2->BRR = UART_DIV_SAMPLING16(UART2_CLK, baud_rate, UART_PRESCALER_DIV1);
     UART2->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
