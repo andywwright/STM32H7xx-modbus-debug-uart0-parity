@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.cps": "javascript",
+        "*.rs": "rust",
+        "protocol.h": "c"
+    }
+}

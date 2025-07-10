@@ -28,10 +28,6 @@
 #include "grbl/hal.h"
 #include "grbl/protocol.h"
 
-// #ifndef MODBUS_EVEN_PARITY
-#define MODBUS_EVEN_PARITY 1
-// #endif
-
 #ifdef SERIAL_PORT
 static stream_rx_buffer_t rxbuf = {0};
 static stream_tx_buffer_t txbuf = {0};
@@ -605,14 +601,12 @@ static bool serialSuspendInput (bool suspend)
 
 static bool serialSetBaudRate (uint32_t baud_rate)
 {
-#if MODBUS_EVEN_PARITY
-    // Reset CR1 then configure 8E1 format
-    UART0->CR1 = 0;
-    UART0->CR1 &= ~(USART_CR1_M0 | USART_CR1_M1 | USART_CR1_PCE | USART_CR1_PS);
-    UART0->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_PCE | USART_CR1_M0; // 8 data bits + even parity, RX+TX enable
-#else
-    UART0->CR1 = USART_CR1_RE | USART_CR1_TE;
+    // UART0->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
+    UART0->CR1 = USART_CR1_RE|USART_CR1_TE
+#if UART0_PARITY_EVEN
+    | USART_CR1_PCE | USART_CR1_M0
 #endif
+    ;
     UART0->CR3 = USART_CR3_OVRDIS;
     UART0->BRR = UART_DIV_SAMPLING16(UART0_CLK, baud_rate, UART_PRESCALER_DIV1);
     UART0->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
@@ -842,25 +836,10 @@ static bool serial1SuspendInput (bool suspend)
 
 static bool serial1SetBaudRate (uint32_t baud_rate)
 {
-#if MODBUS_EVEN_PARITY
-    // Proper 8E1: 8 data bits, even parity, 1 stop bit
-    UART1->CR1 = 0; // Clear config
-
-    // Clear M bits
-    UART1->CR1 &= ~(USART_CR1_M0 | USART_CR1_M1);
-
-    // Set M0 for 8-bit + parity (8E1), enable RX, TX, parity
-    UART1->CR1 |= USART_CR1_M0 | USART_CR1_PCE | USART_CR1_RE | USART_CR1_TE;
-
-    // Ensure even parity (PS = 0)
-    UART1->CR1 &= ~USART_CR1_PS;
-#else
-    UART1->CR1 = USART_CR1_RE | USART_CR1_TE;
-#endif
-
+    UART1->CR1 = USART_CR1_RE|USART_CR1_TE;
     UART1->CR3 = USART_CR3_OVRDIS;
     UART1->BRR = UART_DIV_SAMPLING16(UART1_CLK, baud_rate, UART_PRESCALER_DIV1);
-    UART1->CR1 |= (USART_CR1_UE | USART_CR1_RXNEIE);
+    UART1->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
 
     rxbuf1.tail = rxbuf1.head;
     txbuf1.tail = txbuf1.head;
@@ -1088,16 +1067,7 @@ static bool serial2SuspendInput (bool suspend)
 
 static bool serial2SetBaudRate (uint32_t baud_rate)
 {
-#if MODBUS_EVEN_PARITY
-    // Reset CR1 then configure 8E1 format
-    UART2->CR1 = 0;
-    UART2->CR1 |= USART_CR1_RE | USART_CR1_TE     // Receiver + Transmitter enable
-                | USART_CR1_PCE                   // Enable parity
-                | USART_CR1_M1;                   // M1=1, M0=0 for 8 data bits + parity
-    UART2->CR1 &= ~USART_CR1_PS;                  // PS=0 → even parity
-#else
-    UART2->CR1 = USART_CR1_RE | USART_CR1_TE;
-#endif
+    UART2->CR1 = USART_CR1_RE|USART_CR1_TE;
     UART2->CR3 = USART_CR3_OVRDIS;
     UART2->BRR = UART_DIV_SAMPLING16(UART2_CLK, baud_rate, UART_PRESCALER_DIV1);
     UART2->CR1 |= (USART_CR1_UE|USART_CR1_RXNEIE);
